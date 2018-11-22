@@ -1,0 +1,16 @@
+{
+  "name": "eventstore-event-sourcing",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:andyjduncan/eventstore-event-sourcing.git",
+  "author": "Andy Duncan <andy@adjectivecolournoun.com>",
+  "license": "MIT",
+  "private": false,
+  "devDependencies": {
+    "serverless": "^1.33.2",
+    "serverless-pseudo-parameters": "^2.2.0"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.361.0"
+  }
+}

@@ -1,0 +1,73 @@
+service: message-ingestion
+
+plugins:
+  - serverless-pseudo-parameters
+
+custom:
+  bucketName: event-store-messages
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  region: eu-west-1
+
+functions:
+  generator:
+    handler: generator.deliveries
+    role: MessagesIamRole
+    timeout: 60
+    events:
+      - schedule: rate(1 minute)
+    environment:
+      BUCKET_NAME: ${self:custom.bucketName}
+
+resources:
+  Resources:
+    S3BucketMessages:
+      Type: "AWS::S3::Bucket"
+      Properties:
+        BucketName: ${self:custom.bucketName}
+    MessagesPolicy:
+      Type: "AWS::IAM::ManagedPolicy"
+      Properties:
+        Description: AccessMessages
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+              Resource:
+                Fn::Join:
+                  - ''
+                  - - Fn::GetAtt:
+                      - S3BucketMessages
+                      - Arn
+                    - /*
+    MessagesIamRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            -
+              Effect: "Allow"
+              Principal:
+                Service:
+                  - "lambda.amazonaws.com"
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+          - Ref: MessagesPolicy
+#      GeneratorLambdaPermissionS3:
+#        Type: "AWS::Lambda::Permission"
+#        Properties:
+#          FunctionName:
+#            "Fn::GetAtt":
+#            - GeneratorLambdaFunction
+#            - Arn
+#          Principal: "s3.amazonaws.com"
+#          Action: "lambda:InvokeFunction"
+#          SourceAccount:
+#            Ref: AWS::AccountId
