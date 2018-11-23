@@ -2,13 +2,7 @@
 
 const AWS = require('aws-sdk');
 
-const memoize = require('fast-memoize');
-
-const {Base64} = require('js-base64');
-
-const fetch = require('node-fetch');
-
-const uuid = require('uuid/v4');
+const {publishEvent} = require('./eventstore');
 
 module.exports.trigger = async (event) => {
     const bucket = event.Records[0].s3.bucket.name;
@@ -33,47 +27,9 @@ module.exports.trigger = async (event) => {
         }
     };
 
-    const messageBody = [
-        {
-            eventId: uuid(),
-            eventType: 'MessageReceived',
-            data: message,
-            metadata: metadata
-        }
-    ];
-
-    const headers = {
-        'Content-Type': 'application/vnd.eventstore.events+json',
-        'Accept': 'application/json',
-        'Authorization': (await authentication()),
-        'ES-ExpectedVersion': '-1'
-    };
-
     const eventStore = process.env.EVENT_STORE_ROOT;
 
     const uri = `/streams/message-${message.sender}-${message.messageId}`;
 
-    const eventResponse = await fetch(`${eventStore}${uri}`, {
-        method: 'POST',
-        body: JSON.stringify(messageBody),
-        headers: headers
-    });
-
-    console.log(`${eventResponse.ok} - ${eventResponse.status} ${eventResponse.statusText}`);
+    await publishEvent(`${eventStore}${uri}`, 'MessageReceived', message, metadata);
 };
-
-const authentication = memoize(async () => {
-    const ssm = new AWS.SSM();
-
-    const parameters = await ssm.getParameters({
-        Names: ['/eventstore/ingestion/username', '/eventstore/ingestion/password'],
-        WithDecryption: true
-    }).promise();
-
-    const username = parameters.Parameters.find((p) => p.Name === '/eventstore/ingestion/username').Value;
-    const password = parameters.Parameters.find((p) => p.Name === '/eventstore/ingestion/password').Value;
-
-    const auth = Base64.encode(`${username}:${password}`);
-
-    return `Basic ${auth}`;
-});

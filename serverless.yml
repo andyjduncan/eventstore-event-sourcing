@@ -23,9 +23,12 @@ functions:
     role: MessagesIamRole
     timeout: 60
     events:
-      - schedule: rate(1 minute)
+      - schedule:
+          rate: rate(1 minute)
+          enabled: false
     environment:
       BUCKET_NAME: ${self:custom.bucketName}
+
   ingestionTrigger:
     handler: ingestion.trigger
     role: MessagesIamRole
@@ -37,6 +40,25 @@ functions:
             - suffix: .json
     environment:
       EVENT_STORE_ROOT: http://${self:custom.eventStoreDns}:2113
+
+  consumerMessage:
+    handler: consumer.processMessages
+    role: MessagesIamRole
+    timeout: 60
+    events:
+      - schedule: rate(1 minute)
+    environment:
+      EVENT_STORE_ROOT: http://${self:custom.eventStoreDns}:2113
+
+  consumerS3Asset:
+    handler: consumer.processAssets
+    role: MessagesIamRole
+    timeout: 60
+    events:
+      - schedule: rate(1 minute)
+    environment:
+      EVENT_STORE_ROOT: http://${self:custom.eventStoreDns}:2113
+
 resources:
   Resources:
     S3BucketMessages:
