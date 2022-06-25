@@ -14,7 +14,7 @@
     "aws-sdk": "^2.361.0",
     "fast-memoize": "^2.5.1",
     "js-base64": "^2.4.9",
-    "node-fetch": "^2.3.0",
+    "node-fetch": "^2.6.7",
     "uuid": "^3.3.2"
   }
 }
